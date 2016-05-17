@@ -48,7 +48,7 @@ Server::Server(Configuration* configuration)
 	/* create thread pool */
 	for(int i = 0; i < this->configuration->getThreadNr(); i++)
 	{
-		pthread_create(&threads[i].tid, NULL, &process_connection, (void *) i);
+		pthread_create(&threads[i].tid, NULL, &process_connection, (void *)(long) i);
 		threads[i].client_count = 0;
 	}
 		

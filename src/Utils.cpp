@@ -116,7 +116,7 @@ std::vector<char> Utils::str2vector( std::string& s)
 {
 	std::vector<char> result_vector;
 	
-	for(int i=0; i<s.length();i++)
+	for(unsigned int i=0; i<s.length();i++)
 		result_vector.push_back(s[i]);
 		
 	return result_vector;
@@ -162,9 +162,9 @@ std::vector<char> Utils::unescape(std::vector<char> & s)
 
 char * Utils::get_substring_value(char* str)
 {
-	int i=0;
+	unsigned int i=0;
 	int soffset=-1,eoffset=-1;
-	for(i;i<strlen(str);i++)
+	for(;i<strlen(str);i++)
 	{
 		if(str[i]=='"')
 		{

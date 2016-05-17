@@ -9,7 +9,7 @@
 #include <syslog.h>
 #include <pthread.h>
 #include <unistd.h>
-
+#include <stdexcept>
 
 using namespace std;
 typedef vector<char> wektor;
@@ -18,15 +18,21 @@ typedef vector<char> wektor;
 wektor str2vector(string s)
 {
 	wektor result_vector;
-	for(int i=0; i<s.length();i++)
+	for(unsigned int i=0; i<s.length();i++)
 		result_vector.push_back(s[i]);
 		
 	return result_vector;
 	
 }
 
-wektor cutvector(wektor str,int start_offset, int end_offset)
+wektor cutvector(wektor str, int start_offset, int end_offset)
 {
+	if(start_offset < 0){
+		throw std::overflow_error("start_offset is negative");
+	}
+	if(end_offset < 0){
+		throw std::overflow_error("end_offset is negative");
+	}
 
 	wektor result_vector;
 	for(int i=start_offset;i<=end_offset;i++)
@@ -42,10 +48,10 @@ wektor mergevector(wektor str1,wektor str2)
 
 	wektor result_vector;
 
-	for(int i=0;i<str1.size();i++)
+	for(unsigned int i=0;i<str1.size();i++)
 		result_vector.push_back(str1[i]);
 	
-	for(int i=0;i<str2.size();i++)
+	for(unsigned int i=0;i<str2.size();i++)
 		result_vector.push_back(str2[i]);
 
 	return result_vector;
@@ -56,7 +62,7 @@ void revregx_error(wektor &regex)
 {
 
 fprintf(stdout,"Regex error : !!");			
-for(int k=0;k<regex.size();k++)
+for(unsigned int k=0;k<regex.size();k++)
 	cout<<regex[k];
 cout<<endl;
 
@@ -64,7 +70,7 @@ cout<<endl;
 
 void print_vector(wektor &wektor)
 {
-for(int k=0;k<wektor.size();k++)
+for(unsigned int k=0;k<wektor.size();k++)
 	cout<<wektor[k];
 cout<<endl;
 }
@@ -110,37 +116,32 @@ wektor revregex_process_bracket(wektor str,int start_offset,int end_offset) //in
 	wektor result_vector;
 	//TODO hex support
 	int bslash='\\';
-	int word='w';
-	int digit='d';
 	int range='-';
 
 	//flags
 	char nnot=0;
-	char wordf=0;
-	char digitf=0;
-	char rangeword=0;
-	char rangedigit=0;
 	
 	//character pool
-	char characters[255]={0,};
-	int chari=0;
-	char characterstmp[255]={0,};
+	char characters[256]={0};
+	unsigned int chari=0;
+	char characterstmp[256]={0};
 	long character_class=0;
 	
 	//skip first bracket char
-	int i=start_offset+1;
-	int lend_offset=end_offset;
+	unsigned int i = start_offset + 1;
+	unsigned int lend_offset = end_offset;
 	int tmpj;
 	
 	if( str[i]=='^') //not flag
 	{
-		i++;nnot=1;
+		i++;
+		nnot=1;
 	}
 	
 	// DEBUG
 	//fprintf(stdout,"%d %d",i,end_offset);
 	
-	for(i;i<lend_offset;i++)
+	for(;i<lend_offset;i++)
 	{
 		 		
 			if( str[i]==bslash && i+1!=lend_offset ) //special chars - check if character class
@@ -175,7 +176,7 @@ wektor revregex_process_bracket(wektor str,int start_offset,int end_offset) //in
 					{
 						//DEBUG
 						//fprintf(stdout,"unknown char: %c !\n", str[i+1]); //DEBUG - ignore this char it probably was escaped
-						characters[str[i+1]]=1;
+						characters[(int) str[i+1]]=1;
 					}
 				i++;
 				
@@ -187,12 +188,14 @@ wektor revregex_process_bracket(wektor str,int start_offset,int end_offset) //in
 					
 					//add chars from range to the pool
 					tmpj=str[i];
-					for(tmpj;tmpj<=str[i+2];tmpj++)
+					for(;tmpj<=str[i+2];tmpj++)
 					{
+						if(tmpj >= 255){
+							throw std::overflow_error("tmpj outside size of characters");
+						}
 						characters[tmpj]=1;
 					}
 					i+=3;
-					rangeword=1;
 					
 			}
 			else if( isdigit(str[i]) && (i+1)!=lend_offset && str[i+1]==range && (i+2)!=lend_offset && isdigit(str[i+2])) //check if rangedigit
@@ -201,12 +204,11 @@ wektor revregex_process_bracket(wektor str,int start_offset,int end_offset) //in
 					//fprintf(stdout,"ranged");
 					
 					tmpj=str[i];
-					for(tmpj;tmpj<=str[i+2];tmpj++)
+					for(;tmpj<=str[i+2];tmpj++)
 					{
 						characters[tmpj]=1;
 					}
 					i+=3;
-					rangedigit=1;
 					
 			} 
 			else if(str[i]=='.')
@@ -216,13 +218,13 @@ wektor revregex_process_bracket(wektor str,int start_offset,int end_offset) //in
 			else
 			{
 				//printf ("# [ char %c ]\n",str[i]);
-				characters[str[i]]=1;
+				characters[(int) str[i]]=1;
 			} 
 				
 	}
 
 	char endmetachar=str[end_offset+1]; //TODO: should be ok unless one creates "[a-z]", which is invalid regex!
-	int finsize=0;
+	unsigned int finsize=0;
 	//srand (time(NULL) );
 	
 	// fill character pool
@@ -241,7 +243,7 @@ wektor revregex_process_bracket(wektor str,int start_offset,int end_offset) //in
 	else if(character_class & 1<<4) 
 	{
 		int j='0';
-		for(j;j<='9';j++)
+		for(;j<='9';j++)
 		{
 			characters[j]=1;
 		}
@@ -256,13 +258,13 @@ wektor revregex_process_bracket(wektor str,int start_offset,int end_offset) //in
 	else if(character_class & 1<<6) 
 	{
 		int j='a';
-		for(j;j<='z';j++)
+		for(;j<='z';j++)
 		{
 			characters[j]=1;
 		}
 		
 		j='A';
-		for(j;j<='Z';j++)
+		for(;j<='Z';j++)
 		{
 			characters[j]=1;
 		}
@@ -302,7 +304,7 @@ wektor revregex_process_bracket(wektor str,int start_offset,int end_offset) //in
 	
 	//TODO to be corrected
 	i=0;
-	for(i;i<255;i++)
+	for(;i<255;i++)
 	{
 		if(nnot==0 && characters[i])
 		{
@@ -320,12 +322,15 @@ wektor revregex_process_bracket(wektor str,int start_offset,int end_offset) //in
 	
 	if(chari)
 	{
-	int tmp;
+	unsigned int tmp;
 	i=0;
 
-		for(i;i<finsize;i++)
+		for(;i < finsize;i++)
 		{
-			tmp=rand()%chari;
+			tmp = rand() % chari;
+			if(tmp >= 255){
+				throw std::overflow_error("tmp outside size of characterstmp");
+			}
 			result_vector.push_back(characterstmp[tmp]);
 		}
 	
@@ -349,7 +354,7 @@ wektor fill_specialchars(wektor str,int start_offset,int end_offset)
 
 	int i=start_offset;
 	
-	for(i;i<=end_offset;i++)
+	for(;i<=end_offset;i++)
 	{
 			if(str[i]==bslash && i+1<=end_offset && str[i+1]==word  && ( i == start_offset ||  str[i-1] != bslash ) )
 			{
@@ -406,9 +411,9 @@ wektor escape_hex(wektor str,int start_offset,int end_offset)
 	
 	int i=start_offset;
 	
-	for(i;i<=end_offset;i++)
+	for(;i<=end_offset;i++)
 	{
-		if(str[i]==bslash && ( i == start_offset ||  str[i-1] != bslash )){
+		if(str[i]==bslash && ( i == start_offset || str[i-1] != bslash )){
 			
 		 	if(str[i+1]=='x' && i+2!=end_offset+1 && ishex(str[i+2]) && i+3!=end_offset+1 && ishex(str[i+3]))
 				{
@@ -450,11 +455,11 @@ wektor revregexn(wektor str)
 	isinbracketi=false;
 	isescapedi = false;
 
-	for(int i=0;i<result_vector.size();i++) // remove parenthises
+	for(unsigned int i=0;i<result_vector.size();i++) // remove parenthises
 	{
-		if(result_vector[i]==lbrak && i-1>=0 && result_vector[i-1]!=bslash )
+		if(result_vector[i]==lbrak && i>=1 && result_vector[i-1]!=bslash )
 		isinbracketi=true;
-		if(result_vector[i]==rbrak && result_vector[i-1]!=bslash )
+		if(result_vector[i]==rbrak && i>=1 && result_vector[i-1]!=bslash )
 		isinbracketi=false;
 
 		if(result_vector[i]==bslash)
@@ -464,19 +469,19 @@ wektor revregexn(wektor str)
 		
 		//cout<<"i:"<<isescapedi;
 
-		if( result_vector[i]==lnaw && !isinbracketi &&  (i==0 || result_vector[i-1]!=bslash ) && !isescapedi )
+		if( result_vector[i]==lnaw && !isinbracketi && (i==0 || result_vector[i-1]!=bslash ) && !isescapedi )
 		{
 
 			isinbracketj=false;
 			isescapedj = isescapedi;
 
-			for(int j=i;j<result_vector.size();)
+			for(unsigned int j=i;j<result_vector.size();)
 			{
 
 
-				if(result_vector[j]==lbrak && j-1>=0 && result_vector[j-1]!=bslash)
+				if(result_vector[j]==lbrak && j>=1 && result_vector[j-1]!=bslash)
 					isinbracketj=true;
-				if(result_vector[j]==rbrak && result_vector[j-1]!=bslash)
+				if(result_vector[j]==rbrak && j>=1 && result_vector[j-1]!=bslash)
 					isinbracketj=false;
 
 				if(result_vector[j]==bslash)
@@ -487,10 +492,13 @@ wektor revregexn(wektor str)
 				//cout<<"j:"<<isescapedj;
 
 				if(result_vector[j]==rnaw && !isinbracketi && !isinbracketj && !isescapedj ){
-					
-					tmp=mergevector(tmp,cutvector(result_vector,0,i-1));
-					tmp=mergevector(tmp,cutvector(result_vector,i+1,j-1));
-					tmp=mergevector(tmp,cutvector(result_vector,j+1,result_vector.size()-1));
+					if(i>=1){	
+						tmp=mergevector(tmp, cutvector(result_vector, 0, i-1));
+					}
+					if(j>=1){	
+						tmp=mergevector(tmp, cutvector(result_vector, i+1, j-1));
+					}
+					tmp=mergevector(tmp, cutvector(result_vector, j+1, result_vector.size() - 1));
 					result_vector=tmp;
 					goto repeat_remove;
 					}
@@ -510,7 +518,7 @@ wektor revregexn(wektor str)
 			}
 
 		}
-		else if(result_vector[i]==rnaw && result_vector[i-1]!=bslash && !isinbracketi)
+		else if(result_vector[i]==rnaw && (i==0 || result_vector[i-1]!=bslash) && !isinbracketi)
 		{	
 			/*
 			if(configuration->getConfigValue(OPT_DEBUG))
@@ -526,7 +534,7 @@ wektor revregexn(wektor str)
 	isescapedi = false;
 
 	wektor tmpwekt;
-	for(int i=0;i<result_vector.size();i++) // remove brackets
+	for(unsigned int i=0;i<result_vector.size();i++) // remove brackets
 	{
 
 		if(result_vector[i]==bslash)
@@ -534,12 +542,12 @@ wektor revregexn(wektor str)
 		else
 			isescapedi = false;
 
-		if(result_vector[i]==lbrak && ( (i == 0 ) || result_vector[i-1]!=bslash) && !isescapedi) 
+		if(result_vector[i]==lbrak && (i == 0 || result_vector[i-1]!=bslash) && !isescapedi) 
 		{
 
 		isescapedj = isescapedi;
 
-			for(int j=i;j<result_vector.size();)
+			for(unsigned int j=i;j<result_vector.size();)
 			{
 
 				if(result_vector[j]==bslash)
@@ -549,10 +557,12 @@ wektor revregexn(wektor str)
 
 				if(result_vector[j]==rbrak && !isescapedj){
 					
-					tmpwekt=revregex_process_bracket(result_vector,i,j);
-					tmp=mergevector(tmp,cutvector(result_vector,0,i-1));
+					tmpwekt=revregex_process_bracket(result_vector, i, j);
+					if(i>=1){
+						tmp=mergevector(tmp,cutvector(result_vector, 0, i-1));
+					}
 					tmp=mergevector(tmp,tmpwekt);
-					tmp=mergevector(tmp,cutvector(result_vector,j+2,result_vector.size()-1));
+					tmp=mergevector(tmp,cutvector(result_vector, j+2, result_vector.size() - 1));
 					result_vector=tmp;
 					goto repeat_remove2;
 					}
@@ -585,8 +595,8 @@ std::vector<char> process_signature(std::string str)
 	   try {
 
 	result_vector=revregexn(str2vector(str));
-    result_vector=fill_specialchars(result_vector,0,result_vector.size()-1);
-    result_vector=escape_hex(result_vector,0,result_vector.size()-1);
+    result_vector=fill_specialchars(result_vector, 0, result_vector.size() - 1);
+    result_vector=escape_hex(result_vector, 0, result_vector.size() - 1);
     		} 
        catch(...){
        	cout<<"Fatal error occured while processing signatures. Plz. open a github ticker for following regex:"<<endl;

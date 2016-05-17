@@ -130,7 +130,7 @@ bool Configuration::processArgs(int argc, char** argv)
 			this->fuzzpayload_file=std::string(optarg);
 			if(this->opts[OPT_FUZZ_INTERNAL])
 			{
-				fprintf(stdout,"Error: -1 flag cannot be used with -f \n\n", __progname);
+				fprintf(stdout,"Error: -1 flag cannot be used with -f \n");
 				exit(0);
 			}
 			fprintf(stdout,"-> Reading fuzzing payloads from a file %s!\n",this->fuzzpayload_file.c_str());
@@ -144,7 +144,7 @@ bool Configuration::processArgs(int argc, char** argv)
 			this->opts[OPT_FUZZ_INTERNAL]=1;
 			if(this->opts[OPT_FUZZ_WORDLIST])
 			{
-				fprintf(stdout,"Error: -f flag cannot be used with -1 \n\n", __progname);
+				fprintf(stdout,"Error: -f flag cannot be used with -1 \n");
 				exit(0);
 			}
 			fprintf(stdout,"-> Generating fuzzing payloads internally!\n");
@@ -158,7 +158,7 @@ bool Configuration::processArgs(int argc, char** argv)
 			this->usage();
 			break;
 		default:
-			fprintf(stdout,"Try ` %s -h' for more information.\n\n", __progname);
+			fprintf(stdout,"Try ` %s -h' for more information.\n", __progname);
 			exit(0);
 			break;
 			}

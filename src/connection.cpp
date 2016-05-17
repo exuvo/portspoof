@@ -88,7 +88,7 @@ void nonblock(int sockfd)
 
 void* process_connection(void *arg)
 {
-	int tid =  *((int*)(&arg));
+	int tid = (int)(long) arg;
 	string str;
 	char buffer[MAX_BUFFER_SIZE];
 	unsigned int buffer_size=0;

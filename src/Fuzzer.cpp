@@ -86,7 +86,7 @@ bool Fuzzer::PrepareFuzzer()
 	while (fgets(buf_file, BUFSIZE, fp))
 	nmapfuzzsignatures.push_back(std::string(buf_file));
 	fclose(fp);
-	fprintf(stdout,"-> Nmap signatures read: %d \n",this->nmapfuzzsignatures.size());
+	fprintf(stdout,"-> Nmap signatures read: %lu \n", this->nmapfuzzsignatures.size());
     
 	}
 	
